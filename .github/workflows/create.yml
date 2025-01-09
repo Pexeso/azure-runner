@@ -1,0 +1,77 @@
+name: create
+
+on:
+  workflow_call:
+    inputs:
+      VM_SIZE:
+        type: string
+      LOCATION:
+        type: string
+      VNET_NAME:
+        type: string
+        required: false
+      VNET_RG:
+        type: string
+        required: false
+      SUBNET_NAME:
+        type: string
+        required: false
+    secrets:
+      ARM_CLIENT_ID:
+        required: true
+      ARM_CLIENT_SECRET:
+        required: true
+      ARM_TENANT_ID:
+        required: true
+      ARM_SUBSCRIPTION_ID:
+        required: true
+      GH_TOKEN:
+        description: token with admin repo privilege
+        required: false
+      GH_APP_ID:
+        description: App id with admin privilege
+        required: false
+      GH_PRIVATE_KEY:
+        description: App private key with admin privilege
+        required: false
+    outputs:
+      uniq_label:
+        value: ${{ jobs.create.outputs.uniq_label }}
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    outputs:
+      uniq_label: ${{ steps.uniqlabel.outputs.label }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate ssh key
+        run: ssh-keygen -b 2048 -f ~/.ssh/id_rsa -N ""
+      - name: Config ssh
+        run: touch ~/.ssh/known_hosts
+      - name: gen uniq label
+        id: uniqlabel
+        run: 'echo label=$(shuf -er -n8  {a..z} | paste -sd "") >> "$GITHUB_OUTPUT"'
+      - name: upload ssh key
+        uses: actions/upload-artifact@v3
+        with:
+          name: ssh
+          path: ~/.ssh/
+          retention-days: 1
+          include-hidden-files: true
+      - name: login to azure
+        uses: Azure/login@v1
+        with:
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+      - name: run script
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          VM_SIZE: ${{ inputs.VM_SIZE }}
+          LOCATION: ${{ inputs.LOCATION }}
+          UNIQ_LABEL: ${{ steps.uniqlabel.outputs.label }}
+          VNET_NAME: ${{ inputs.VNET_NAME }}
+          VNET_RG: ${{ inputs.VNET_RG }}
+          SUBNET_NAME: ${{ inputs.SUBNET_NAME }}
+        run: bash ./main.sh | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> "$GITHUB_OUTPUT" 
