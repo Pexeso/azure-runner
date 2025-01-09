@@ -44,9 +44,12 @@ jobs:
           path: workflow-repo
       - name: Fix script permissions
         run: |
-          find workflow-repo -type f -name "*.sh" -exec dos2unix {} \;
-          find workflow-repo -type f -name "*.template" -exec dos2unix {} \;
+          sudo apt-get install -y dos2unix
+          dos2unix workflow-repo/main.sh
+          dos2unix workflow-repo/setup.sh.template
           chmod +x workflow-repo/main.sh
+          # Debug: show file contents and line endings
+          cat -A workflow-repo/main.sh
       - name: run script
         env:
           GITHUB_REPO: ${{ github.repository }}
