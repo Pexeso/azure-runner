@@ -29,8 +29,8 @@ if [[ -z "${RUN_ID}" ]];then
     exit 1
 fi
 
-RESOURCE_GROUP_NAME="${RESOURCE_GROUP_NAME:-ghrunner}${RUN_ID}"
-: "${LOCATION:=northeurope}"
+RESOURCE_GROUP_NAME="${RESOURCE_GROUP_NAME:-github-runner}${RUN_ID}"
+: "${LOCATION:=eastus}"
 : "${VM_IMAGE:=Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest}"
 : "${VM_SIZE:=Standard_B1s}"
 VM_NAME="${RESOURCE_GROUP_NAME}vm"
@@ -70,7 +70,6 @@ az vm create \
     --custom-data "${SCRIPT_DIR}/setup.sh" \
     --public-ip-sku Standard \
     --vnet-name "${VNET_NAME}" \
-    #--vnet-resource-group "${VNET_RG}" \
     --subnet "${SUBNET_NAME}" \
     --output none
 

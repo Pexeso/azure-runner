@@ -42,6 +42,11 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/azure-runner
           path: workflow-repo
+      - name: Fix script permissions
+        run: |
+          find workflow-repo -type f -name "*.sh" -exec dos2unix {} \;
+          find workflow-repo -type f -name "*.template" -exec dos2unix {} \;
+          chmod +x workflow-repo/main.sh
       - name: run script
         env:
           GITHUB_REPO: ${{ github.repository }}
