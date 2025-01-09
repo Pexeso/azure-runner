@@ -75,6 +75,7 @@ jobs:
           dos2unix workflow-repo/setup.sh.template
           chmod +x workflow-repo/main.sh
       - name: run script
+        id: run-script
         env:
           GITHUB_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -85,4 +86,8 @@ jobs:
           VNET_NAME: ${{ inputs.VNET_NAME }}
           VNET_RG: ${{ inputs.VNET_RG }}
           SUBNET_NAME: ${{ inputs.SUBNET_NAME }}
-        run: bash ./workflow-repo/main.sh | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> "$GITHUB_OUTPUT" 
+        run: bash ./workflow-repo/main.sh | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> "$GITHUB_OUTPUT"
+      - name: Display VM Info
+        run: |
+          echo "VM Name: ${{ steps.run-script.outputs.vm_name }}"
+          echo "VM IP: ${{ steps.run-script.outputs.ip }}" 
