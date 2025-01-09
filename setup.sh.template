@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Make sure script is run as non root
+if [[ $UID = 0 ]]; then
+    regular_user="$(id -un -- 1000)"
+    chown "${regular_user}" "$0"
+    su -c "bash '$0'" "${regular_user}"
+    exit 0
+fi
+
+if [[ $1 = '--destroy' ]]; then
+    cd "${HOME}/actions-runner"
+    sudo ./svc.sh uninstall
+    ./config.sh remove --token {{token}}
+    exit 0
+fi
+
+# Setup deps
+
+DOCKER_COMPOSE_VERSION="v2.20.2"
+
+sudo apt-get update
+sudo apt-get install -y \
+    git-lfs \
+    jq \
+    docker.io
+
+sudo usermod -aG docker "${USER}"
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo wget -O /usr/local/lib/docker/cli-plugins/docker-compose "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64"
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# Setup Github runner
+
+VERSION="2.306.0"
+HASH="b0a090336f0d0a439dac7505475a1fb822f61bbb36420c7b3b3fe6b1bdc4dbaa"
+
+cd "${HOME}"
+mkdir actions-runner && cd actions-runner
+curl -o actions-runner-linux-x64-${VERSION}.tar.gz -L https://github.com/actions/runner/releases/download/v${VERSION}/actions-runner-linux-x64-${VERSION}.tar.gz
+echo "${HASH}  actions-runner-linux-x64-${VERSION}.tar.gz" | sha256sum -c
+tar xzf ./actions-runner-linux-x64-${VERSION}.tar.gz
+export RUNNER_ALLOW_RUNASROOT=1
+./config.sh --unattended --url https://github.com/{{repo}} --token {{token}} --labels {{label}}
+sudo ./svc.sh install
+sudo ./svc.sh start
