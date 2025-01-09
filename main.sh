@@ -3,12 +3,15 @@ set -e
 
 type az gh > /dev/null
 
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 template_setup() {
-    template_file="setup.sh"
+    template_file="${SCRIPT_DIR}/setup.sh"
     sed_script="s|{{token}}|${RUNNER_TOKEN}|g"
     sed_script="${sed_script};s|{{repo}}|${GITHUB_REPO}|g"
     sed_script="${sed_script};s|{{label}}|${LABEL}|g"
-    sed "${sed_script}" "${template_file}.template" > "${template_file}"
+    sed "${sed_script}" "${SCRIPT_DIR}/setup.sh.template" > "${template_file}"
 }
 
 if [[ -z "${GITHUB_REPO}" ]];then
@@ -43,7 +46,7 @@ if [[ $1 = '--destroy' ]]; then
     template_setup
     VM_IP=$(az vm show --show-details --resource-group "${RESOURCE_GROUP_NAME}" --name "${VM_NAME}" --query publicIps --output tsv)
     ssh-keyscan "${VM_IP}" >> "${HOME}/.ssh/known_hosts" 2> /dev/null
-    ssh "${VM_USERNAME}@${VM_IP}" 'bash -s -- --destroy' < setup.sh
+    ssh "${VM_USERNAME}@${VM_IP}" 'bash -s -- --destroy' < "${SCRIPT_DIR}/setup.sh"
     ssh-keygen -R "${VM_IP}"
     # Delete the resource group
     az group delete --name "${RESOURCE_GROUP_NAME}" --no-wait --yes --output none
@@ -64,7 +67,7 @@ az vm create \
     --admin-username "${VM_USERNAME}" \
     --size "${VM_SIZE}" \
     --ssh-key-values "${HOME}/.ssh/id_rsa.pub" \
-    --custom-data setup.sh \
+    --custom-data "${SCRIPT_DIR}/setup.sh" \
     --public-ip-sku Standard \
     --vnet-name "${VNET_NAME}" \
     #--vnet-resource-group "${VNET_RG}" \
