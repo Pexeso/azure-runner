@@ -69,7 +69,6 @@ az vm create \
     --ssh-key-values "${HOME}/.ssh/id_rsa.pub" \
     --custom-data "${SCRIPT_DIR}/setup.sh" \
     --public-ip-sku Standard \
-    --vnet-name "${VNET_NAME}" \
     --subnet "${SUBNET_NAME}" \
     --output none
 
