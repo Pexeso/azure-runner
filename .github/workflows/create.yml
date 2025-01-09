@@ -63,6 +63,11 @@ jobs:
         uses: Azure/login@v1
         with:
           creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+      - name: Get workflow repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository_owner }}/azure-runner
+          path: workflow-repo
       - name: run script
         env:
           GITHUB_REPO: ${{ github.repository }}
@@ -74,4 +79,4 @@ jobs:
           VNET_NAME: ${{ inputs.VNET_NAME }}
           VNET_RG: ${{ inputs.VNET_RG }}
           SUBNET_NAME: ${{ inputs.SUBNET_NAME }}
-        run: bash ./main.sh | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> "$GITHUB_OUTPUT" 
+        run: bash ./workflow-repo/main.sh | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> "$GITHUB_OUTPUT" 
